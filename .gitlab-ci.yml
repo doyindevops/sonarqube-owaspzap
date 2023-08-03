@@ -37,9 +37,12 @@ tfsec:
     name: aquasec/tfsec:latest
     entrypoint: [ "" ] 
   script:
-    - tfsec . --format json --out tfsec.json 
+    - tfsec . --format json --out tfsec.json  
   allow_failure: true
-  
+  artifacts:
+    when: always
+    paths:
+      - tfsec.json
 
 build:
   stage: build
