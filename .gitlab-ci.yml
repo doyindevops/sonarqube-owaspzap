@@ -37,11 +37,9 @@ tfsec:
     name: aquasec/tfsec:latest
     entrypoint: [ "" ] 
   script:
-    - tfsec . --format json --out tfsec.json
+    - tfsec . --format json --out tfsec.json 
   allow_failure: true
-  artifacts:
-    paths:
-      - tfsec.json
+  
 
 build:
   stage: build
@@ -56,3 +54,4 @@ deploy:
   script:
     - terraform apply -input=false "planfile"
   when: manual
+
