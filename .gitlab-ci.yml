@@ -1,5 +1,6 @@
 stages:
   - init
+  - test
   - build
   - deploy
 
@@ -23,6 +24,21 @@ init:
     paths:
       - .terraform/
       - .terraform.lock.hcl
+
+validate:
+  stage: test
+  script:
+    - terraform validate
+  allow_failure: true
+
+tfsec:
+  stage: test
+  image:
+    name: aquasec/tfsec:latest
+    entrypoint: [ "" ] 
+  script:
+    - tfsec .
+  allow_failure: true
 
 build:
   stage: build
