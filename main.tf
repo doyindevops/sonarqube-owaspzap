@@ -2,10 +2,6 @@ provider "aws" {
   region     = var.aws_region
   access_key = var.aws_access_key_id
   secret_key = var.aws_secret_access_key
-  
-  assume_role {
-    role_arn = "arn:aws:iam::696460314427:role/iac-role"
-  }
 
   default_tags {
     tags = {
