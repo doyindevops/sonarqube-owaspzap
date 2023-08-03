@@ -1,0 +1,39 @@
+stages:
+  - init
+  - build
+  - deploy
+
+image:
+  name: hashicorp/terraform:latest
+  entrypoint: [""]
+
+variables:
+  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+  AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+
+  TF_VAR_env_prefix: "dev"
+  TF_VAR_runner_registration_token: $RUNNER_TOKEN
+
+init:
+  stage: init
+  script:
+    - terraform init
+  artifacts:
+    paths:
+      - .terraform/
+      - .terraform.lock.hcl
+
+build:
+  stage: build
+  script:
+    - terraform plan -out "planfile"
+  artifacts:
+    paths:
+      - planfile
+
+deploy:
+  stage: deploy
+  script:
+    - terraform apply -input=false "planfile"
+  when: manual
