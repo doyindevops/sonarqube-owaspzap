@@ -1,4 +1,4 @@
-name: Infra-Automation CI/CD Pipeline
+name: Terraform CI/CD Pipeline
 
 on:
   push:
@@ -19,17 +19,23 @@ jobs:
   init:
     name: Terraform Init
     runs-on: self-hosted
-    container:
-      image: hashicorp/terraform:latest
+    services:
+      docker:
+        image: docker:19.03.12
+        options: --privileged
     steps:
-      - name: Set up permissions
-        run: sudo chmod -R 777 /__w/_temp
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v1
 
       - name: Checkout Code
         uses: actions/checkout@v3
       
       - name: Terraform Init
-        run: terraform init
+        run: |
+          docker run --rm \
+          -v $(pwd):/workspace \
+          -w /workspace \
+          hashicorp/terraform:latest init
 
       - name: Upload Terraform Init Artifacts
         uses: actions/upload-artifact@v2
@@ -42,10 +48,15 @@ jobs:
   validate:
     name: Terraform Validate
     runs-on: self-hosted
-    container:
-      image: hashicorp/terraform:latest
+    services:
+      docker:
+        image: docker:19.03.12
+        options: --privileged
     needs: init
     steps:
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v1
+
       - name: Checkout Code
         uses: actions/checkout@v3
 
@@ -55,22 +66,34 @@ jobs:
           name: terraform-init
 
       - name: Terraform Validate
-        run: terraform validate
+        run: |
+          docker run --rm \
+          -v $(pwd):/workspace \
+          -w /workspace \
+          hashicorp/terraform:latest validate
         continue-on-error: true
 
   tfsec:
     name: tfsec Security Scan
     runs-on: self-hosted
-    container:
-      image: aquasec/tfsec:latest
-      options: --entrypoint=""
+    services:
+      docker:
+        image: docker:19.03.12
+        options: --privileged
     needs: init
     steps:
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v1
+
       - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: tfsec Scan
-        run: tfsec . --format json --out tfsec.json
+        run: |
+          docker run --rm \
+          -v $(pwd):/workspace \
+          -w /workspace \
+          aquasec/tfsec:latest . --format json --out tfsec.json
         continue-on-error: true
 
       - name: Upload tfsec Scan Results
@@ -82,10 +105,15 @@ jobs:
   build:
     name: Terraform Plan
     runs-on: self-hosted
-    container:
-      image: hashicorp/terraform:latest
+    services:
+      docker:
+        image: docker:19.03.12
+        options: --privileged
     needs: validate
     steps:
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v1
+
       - name: Checkout Code
         uses: actions/checkout@v3
 
@@ -95,7 +123,11 @@ jobs:
           name: terraform-init
 
       - name: Terraform Plan
-        run: terraform plan -out planfile
+        run: |
+          docker run --rm \
+          -v $(pwd):/workspace \
+          -w /workspace \
+          hashicorp/terraform:latest plan -out planfile
 
       - name: Upload Planfile
         uses: actions/upload-artifact@v2
@@ -106,11 +138,16 @@ jobs:
   deploy:
     name: Terraform Apply
     runs-on: self-hosted
-    container:
-      image: hashicorp/terraform:latest
+    services:
+      docker:
+        image: docker:19.03.12
+        options: --privileged
     needs: build
     if: github.event_name == 'workflow_dispatch'
     steps:
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v1
+
       - name: Checkout Code
         uses: actions/checkout@v3
 
@@ -125,4 +162,8 @@ jobs:
           name: terraform-plan
 
       - name: Terraform Apply
-        run: terraform apply -input=false planfile
+        run: |
+          docker run --rm \
+          -v $(pwd):/workspace \
+          -w /workspace \
+          hashicorp/terraform:latest apply -input=false planfile
