@@ -1,0 +1,125 @@
+name: Terraform CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+  TF_VAR_env_prefix: "dev"
+  TF_VAR_runner_registration_token: ${{ secrets.RUNNER_TOKEN }}
+
+jobs:
+  init:
+    name: Terraform Init
+    runs-on: ubuntu-latest
+    container:
+      image: hashicorp/terraform:latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Upload Terraform Init Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: terraform-init
+          path: |
+            .terraform/
+            .terraform.lock.hcl
+
+  validate:
+    name: Terraform Validate
+    runs-on: self-hosted
+    container:
+      image: hashicorp/terraform:latest
+    needs: init
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Download Terraform Init Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: terraform-init
+
+      - name: Terraform Validate
+        run: terraform validate
+        continue-on-error: true
+
+  tfsec:
+    name: tfsec Security Scan
+    runs-on: ubuntu-latest
+    container:
+      image: aquasec/tfsec:latest
+      options: --entrypoint=""
+    needs: init
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: tfsec Scan
+        run: tfsec . --format json --out tfsec.json
+        continue-on-error: true
+
+      - name: Upload tfsec Scan Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: tfsec-scan
+          path: tfsec.json
+
+  build:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    container:
+      image: hashicorp/terraform:latest
+    needs: validate
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Download Terraform Init Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: terraform-init
+
+      - name: Terraform Plan
+        run: terraform plan -out planfile
+
+      - name: Upload Planfile
+        uses: actions/upload-artifact@v2
+        with:
+          name: terraform-plan
+          path: planfile
+
+  deploy:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    container:
+      image: hashicorp/terraform:latest
+    needs: build
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Download Terraform Init Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: terraform-init
+
+      - name: Download Planfile
+        uses: actions/download-artifact@v2
+        with:
+          name: terraform-plan
+
+      - name: Terraform Apply
+        run: terraform apply -input=false planfile

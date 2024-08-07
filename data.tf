@@ -31,9 +31,9 @@ data "aws_iam_instance_profile" "app-server-role" {
   name       = "app-server-role"
 }
 
-data "aws_iam_instance_profile" "gitlab-runner-role" {
-  depends_on = [aws_iam_instance_profile.gitlab-runner-role]
-  name       = "gitlab-runner-role"
+data "aws_iam_instance_profile" "github-runner-role" {
+  depends_on = [aws_iam_instance_profile.github-runner-role]
+  name       = "github-runner-role"
 }
 
 data "aws_ami" "ubuntu" {

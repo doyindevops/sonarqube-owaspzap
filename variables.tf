@@ -15,3 +15,7 @@ variable "runner_registration_token" {
   # will not be displayed in tf output
   sensitive = true
 }
+variable "github_repo" {
+  description = "The GitHub repository to use for the runner"
+  type        = string
+}
