@@ -18,12 +18,15 @@ env:
 jobs:
   init:
     name: Terraform Init
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     container:
       image: hashicorp/terraform:latest
     steps:
+      - name: Set up permissions
+        run: sudo chmod -R 777 /__w/_temp
+
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       
       - name: Terraform Init
         run: terraform init
@@ -44,7 +47,7 @@ jobs:
     needs: init
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download Terraform Init Artifacts
         uses: actions/download-artifact@v2
@@ -57,14 +60,14 @@ jobs:
 
   tfsec:
     name: tfsec Security Scan
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     container:
       image: aquasec/tfsec:latest
       options: --entrypoint=""
     needs: init
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: tfsec Scan
         run: tfsec . --format json --out tfsec.json
@@ -78,13 +81,13 @@ jobs:
 
   build:
     name: Terraform Plan
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     container:
       image: hashicorp/terraform:latest
     needs: validate
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download Terraform Init Artifacts
         uses: actions/download-artifact@v2
@@ -102,14 +105,14 @@ jobs:
 
   deploy:
     name: Terraform Apply
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     container:
       image: hashicorp/terraform:latest
     needs: build
     if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download Terraform Init Artifacts
         uses: actions/download-artifact@v2
