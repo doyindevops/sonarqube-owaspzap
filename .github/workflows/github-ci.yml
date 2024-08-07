@@ -79,7 +79,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: terraform-init
-          download-timeout: 60
+          download-timeout: 600 # Increased timeout to 10 minutes
 
       - name: Terraform Validate
         run: |
@@ -237,7 +237,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: terraform-init
-          download-timeout: 60
+          download-timeout: 600 # Increased timeout to 10 minutes
 
       - name: Set Executable Permissions
         run: sudo chmod -R +x $(pwd)/.terraform
@@ -284,8 +284,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: terraform-init
-          path: .terraform
-          download-timeout: 60
+          download-timeout: 600 # Increased timeout to 10 minutes
 
       - name: Download Planfile
         uses: actions/download-artifact@v2
@@ -327,8 +326,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: terraform-init
-          path: .terraform
-          download-timeout: 60
+          download-timeout: 600 # Increased timeout to 10 minutes
 
       - name: Download Planfile
         uses: actions/download-artifact@v2
