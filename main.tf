@@ -202,7 +202,7 @@ module "ec2_app_server" {
   vpc_security_group_ids      = [aws_security_group.app-server.id]
   subnet_id                   = module.vpc.public_subnets[0]
   key_name                    = "appserver-runner-key"
-  user_data                   = base64encode(local.script)
+  user_data                   = filebase64("install-docker.sh")
 
   tags = {
     Terraform   = "true"
@@ -232,7 +232,7 @@ module "ec2_github_runner" {
   vpc_security_group_ids      = [aws_security_group.main.id]
   subnet_id                   = module.vpc.public_subnets[0]
   key_name                    = "appserver-runner-key"
-  user_data                   = base64encode(local.script-github)
+  user_data                   = filebase64("install-docker.sh")
 
   tags = {
     Terraform   = "true"
@@ -248,11 +248,11 @@ module "ec2_github_runner" {
 }
 
 locals {
-  script = templatefile("${path.module}/scripts/script.tpl", {})
+  script = templatefile("${path.module}/scripts/script.tpl.sh", {})
 }
 
 locals {
-  script-github = templatefile("${path.module}/scripts/script-github.tpl", {
+  script-github = templatefile("${path.module}/scripts/script-github.sh", {
     runner_registration_token = var.runner_registration_token
     github_repo = var.github_repo
   })
