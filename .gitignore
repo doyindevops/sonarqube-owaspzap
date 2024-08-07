@@ -42,3 +42,9 @@ override.tf.json
 .gitlab-ci.yml
 .circleci/
 .jenkins/
+
+# Terraform variable files containing sensitive information
+terraform.tfvars
+*.auto.tfvars
+
+infra-automation.git
