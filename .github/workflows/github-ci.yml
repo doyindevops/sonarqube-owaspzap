@@ -60,11 +60,11 @@ jobs:
   validate:
     name: Terraform Validate
     runs-on: self-hosted
+    needs: init
     services:
       docker:
         image: docker:19.03.12
         options: --privileged
-    needs: init
     steps:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
@@ -89,7 +89,7 @@ jobs:
           -e AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" \
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
-          -e TF_VAR_github_repo="${{ secrets.GITHUB_REPO }}" \
+          -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
           -v $(pwd):/workspace \
           -w /workspace \
           hashicorp/terraform:latest validate
@@ -98,11 +98,11 @@ jobs:
   tfsec:
     name: tfsec Security Scan
     runs-on: self-hosted
+    needs: init
     services:
       docker:
         image: docker:19.03.12
         options: --privileged
-    needs: init
     steps:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
@@ -122,7 +122,7 @@ jobs:
           -e AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" \
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
-          -e TF_VAR_github_repo="${{ secrets.GITHUB_REPO }}" \
+          -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
           -v $(pwd):/workspace \
           -w /workspace \
           aquasec/tfsec:latest . --format json --out tfsec.json
@@ -134,14 +134,94 @@ jobs:
           name: tfsec-scan
           path: tfsec.json
 
+  gitleaks:
+    name: Gitleaks Secret Scan
+    runs-on: self-hosted
+    needs: init
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Gitleaks Scan
+        uses: zricethezav/gitleaks-action@v1.4.0
+        with:
+          args: "--path=. --report-format=json --report-path=gitleaks-report.json"
+        continue-on-error: true
+      - name: Upload Gitleaks Scan Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: gitleaks-scan
+          path: gitleaks-report.json
+
+  njsscan:
+    name: Node.js Security Scan
+    runs-on: self-hosted
+    needs: init
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install njsscan
+        run: pip install njsscan
+      - name: Run njsscan
+        run: njsscan --exit-warning . --sarif -o njsscan.sarif
+        continue-on-error: true
+      - name: Upload njsscan Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: njsscan
+          path: njsscan.sarif
+
+  semgrep:
+    name: Semgrep Security Scan
+    runs-on: self-hosted
+    needs: init
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Semgrep Scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: p/javascript
+        continue-on-error: true
+      - name: Upload Semgrep Scan Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: semgrep
+          path: semgrep.sarif
+
+  retire:
+    name: Retire.js Security Scan
+    runs-on: self-hosted
+    needs: init
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Install Retire.js
+        run: npm install -g retire
+      - name: Run Retire.js
+        run: retire --outputformat json --outputpath retire.json
+        continue-on-error: true
+      - name: Upload Retire.js Scan Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: retire
+          path: retire.json
+
   build:
     name: Terraform Plan
     runs-on: self-hosted
+    needs: validate
     services:
       docker:
         image: docker:19.03.12
         options: --privileged
-    needs: validate
     steps:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
@@ -169,7 +249,7 @@ jobs:
           -e AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" \
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
-          -e TF_VAR_github_repo="${{ secrets.GITHUB_REPO }}" \
+          -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
           -v $(pwd):/workspace \
           -w /workspace \
           hashicorp/terraform:latest plan -out planfile
@@ -220,7 +300,7 @@ jobs:
           -e AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" \
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
-          -e TF_VAR_github_repo="${{ secrets.GITHUB_REPO }}" \
+          -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
           -v $(pwd):/workspace \
           -w /workspace \
           hashicorp/terraform:latest apply -input=false planfile
@@ -261,7 +341,7 @@ jobs:
           -e AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" \
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
-          -e TF_VAR_github_repo="${{ secrets.GITHUB_REPO }}" \
+          -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
           -v $(pwd):/workspace \
           -w /workspace \
           hashicorp/terraform:latest apply -input=false planfile
