@@ -1,75 +1,123 @@
-### The versions used in the project
-providers 
+# Infrastructure Provisioning with Terraform on GitHub (GitOps)
+
+This repository contains Terraform configurations and GitHub Actions workflows used to provision and manage AWS infrastructure following GitOps principles. The setup ensures that infrastructure changes are automated, version-controlled, and reliable.
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Prerequisites](#prerequisites)
+3. [Repository Structure](#repository-structure)
+4. [GitHub Actions Workflows](#github-actions-workflows)
+5. [Terraform Configuration](#terraform-configuration)
+6. [Usage](#usage)
+7. [Manual Trigger](#manual-trigger)
+8. [Contributing](#contributing)
+9. [License](#license)
+
+## Overview
+
+This project leverages Terraform to define and provision infrastructure on AWS. The deployment process is managed by GitHub Actions workflows, which include steps for initialization, validation, security scanning, planning, and applying the changes. This approach ensures that all infrastructure changes are thoroughly tested before being applied.
+
+## Prerequisites
+
+Before you begin, ensure you have the following:
+
+- An AWS account with IAM user credentials (access key and secret key).
+- A GitHub repository with the necessary secrets configured for AWS credentials and other environment variables.
+
+## Repository Structure
+
+The repository contains the following main components:
+
+- **`.github/workflows/github-ci.yml`**: GitHub Actions workflow file that automates the CI/CD pipeline for Terraform.
+- **`main.tf`**: Main Terraform configuration file.
+- **`variables.tf`**: File defining input variables for Terraform.
+- **`outputs.tf`**: File defining the outputs of the Terraform configuration.
+- **Other Terraform files**: Additional configuration files that define various AWS resources.
+
+## GitHub Actions Workflows
+
+The GitHub Actions workflow (`.github/workflows/github-ci.yml`) automates the entire deployment process, including the following jobs:
+
+1. **Terraform Init**: Initializes Terraform and sets up the backend.
+2. **Terraform Validate**: Validates the Terraform configuration to ensure it is syntactically correct.
+3. **tfsec Security Scan**: Runs security scans on the Terraform code using `tfsec`.
+4. **Terraform Plan**: Creates an execution plan for the changes, showing what will be added, changed, or destroyed.
+5. **Terraform Apply**: Applies the changes to the infrastructure. This job can run automatically after a successful plan or be manually triggered.
+
+### Automatic and Manual Deployment
+
+The workflow supports both automatic and manual deployments:
+
+- **Automatic Deployment**: After a successful Terraform plan, the apply job runs automatically to provision the infrastructure.
+- **Manual Deployment**: You can manually trigger the apply job using the `workflow_dispatch` event in GitHub Actions.
+
+## Terraform Configuration
+
+### Versions Used in the Project
+
+#### Providers
 - hashicorp/aws = 5.3
 
-modules
+#### Modules
 - terraform-aws-modules/ec2-instance/aws = 5.2.1
 - terraform-aws-modules/vpc/aws = 5.1.0
 
-</br>
+### Resources Created
 
-### Following resources are created with this TF script
-- role "app-server-role" with policies:
+- Role "app-server-role" with policies:
     - AmazonSSMManagedInstanceCore
     - AmazonEC2ContainerRegistryFullAccess
-- role "gitlab-runner-role" with policies:
+- Role "gitlab-runner-role" with policies:
     - AmazonSSMFullAccess
     - AmazonEC2ContainerRegistryFullAccess
-- vpc "main"
-- security group "main"
-- security group "app-server"
-- ec2 server "ec2_app_server" with:
+- VPC "main"
+- Security group "main"
+- Security group "app-server"
+- EC2 server "ec2_app_server" with:
     - Role: app-server-role
     - Security Group: app-server
-- ec2 server "ec2_gitlab_runner"
+- EC2 server "ec2_gitlab_runner" with:
     - Role: gitlab-runner-role
     - Security Group: main
 
-NOTE: both servers are using the Ubuntu image: ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-*
+**Note**: Both servers use the Ubuntu image: ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-*
 
-</br>
+## Usage
 
-### Create *terraform.tfvars* file and set following variables inside before running the script
+### Create `terraform.tfvars` File
+
+Before running the script, create a `terraform.tfvars` file and set the following variables:
+
 - aws_access_key_id
 - aws_secret_access_key
 - aws_region
 - env_prefix
 - runner_registration_token
 
-NOTEs: 
-- *variables.tf* vs *terraform.tfvars*
+**Notes**: 
+- `variables.tf` declares all variables used in the script and is a normal part of the Terraform script. `terraform.tfvars` assigns values to those declared variables, including secret variables, so it should be created and used locally, not committed to the repository as part of the code.
+- Format inside `terraform.tfvars`:
+  ```console
+  my_var_one="value-one" 
+  my_var_two="value-two"
 
-*variables.tf* declares all variables used in script and is normal part of tf script. While *terraform.tfvars* assigns values to those declared variables including secret variables, so it should be created and used locally, not commited to the repo as part of code.
+## Terraform Commands ##
 
-- Format inside terraform.tfvars:
-```console
-    my_var_one="value-one" 
-    my_var_two="value-two"
-```
-</br>
-
-### Terraform commands to execute the script
-
-```console
-# initialise project & download providers
+# Initialise project & download providers
 terraform init 
 
-# preview what will be created with apply & see if any errors
+# Preview what will be created with apply & see if any errors
 terraform plan
 
-# exeucute with preview
-terraform apply -var-file terraform.tfvars
+# Execute with preview
+terraform apply -var-file=terraform.tfvars
 
-# execute without preview
-terraform apply -var-file terraform.tfvars -auto-approve
+# Execute without preview
+terraform apply -var-file=terraform.tfvars -auto-approve
 
-# destroy everything
+# Destroy everything
 terraform destroy
 
-# show resources and components from current state
+# Show resources and components from current state
 terraform state list
-```
-
-Notes: 
-- For verbose output, set `export TF_LOG=DEBUG` before running TF commands
-- When using s3 bucket as remote state, you need to set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` env vars in the session, before executing `terraform init` and `terraform plan` commands
