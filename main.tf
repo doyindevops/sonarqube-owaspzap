@@ -247,22 +247,3 @@ module "ec2_github_runner" {
   }]
 }
 
-locals {
-  script = templatefile("${path.module}/scripts/script.tpl.sh", {})
-}
-
-locals {
-  script-github = templatefile("${path.module}/scripts/script-github.sh", {
-    runner_registration_token = var.runner_registration_token
-    github_repo = var.github_repo
-  })
-}
-
-output "script" {
-  value = local.script
-}
-
-output "script-github" {
-  value = local.script-github
-  sensitive = true
-}

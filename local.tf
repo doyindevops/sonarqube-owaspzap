@@ -13,5 +13,5 @@ output "script" {
 
 output "script-github" {
   value = local.script_github
-  sensitive = true 
+  sensitive = true
 }
