@@ -121,3 +121,67 @@ terraform destroy
 
 # Show resources and components from current state
 terraform state list
+
+
+
+
+## Terraform Destroy Process Documentation ##
+This document provides a step-by-step guide on how to set up and execute the Terraform destroy process using GitHub Actions.
+
+Prerequisites
+GitHub Repository: Ensure you have a GitHub repository with your Terraform configuration files.
+GitHub Secrets: Store your AWS credentials and necessary environment variables in GitHub Secrets.
+Docker: Docker must be installed on the runner machine, whether it is self-hosted or a GitHub-hosted runner.
+Steps to Set Up Terraform Destroy Workflow
+1. Create a New Workflow File
+1.1 Navigate to your GitHub repository and create a new file in the .github/workflows directory named terraform-destroy.yml.
+
+1.2 This workflow will be responsible for initializing and destroying your Terraform-managed infrastructure.
+
+2. Define Environment Variables
+2.1 In your workflow file, define the necessary environment variables. These include AWS credentials and any Terraform variables you require.
+
+3. Set Up the Destroy Job
+3.1 Create a job within your workflow file that will:
+
+Set up Docker.
+Set the appropriate permissions.
+Check out the code from your repository.
+Initialize Terraform.
+Execute terraform destroy to destroy the infrastructure.
+4. Triggering the Workflow
+4.1 The workflow should be configured to trigger on a push to a specific branch, such as destroy, or manually via the GitHub Actions tab.
+
+5. Execute the Workflow
+5.1 Automatic Trigger: Push to the destroy branch in your repository to automatically trigger the destroy workflow.
+
+5.2 Manual Trigger: Navigate to the Actions tab in your GitHub repository, select the Terraform Destroy workflow, and click on the Run workflow button to trigger it manually.
+
+6. Verify Destruction
+6.1 Monitor the workflow execution in the GitHub Actions tab to ensure that the destroy process completes successfully.
+
+6.2 Confirm that the Terraform-managed resources have been successfully destroyed in your AWS account.
+
+Example Usage
+Pushing to Destroy Branch
+Create a new branch named destroy:
+
+sh
+Copy code
+git checkout -b destroy
+Push the destroy branch to your repository:
+
+sh
+Copy code
+git push origin destroy
+Manually Triggering the Workflow
+Go to the Actions tab in your GitHub repository.
+Select the Terraform Destroy workflow.
+Click on the Run workflow button.
+By following these steps, you can safely and efficiently destroy your Terraform-managed infrastructure using GitHub Actions.
+
+
+
+
+
+
