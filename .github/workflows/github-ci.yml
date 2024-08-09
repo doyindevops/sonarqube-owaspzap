@@ -32,11 +32,6 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
 
-      - name: Debug Current Directory
-        run: |
-          echo "Current directory: $(pwd)"
-          ls -al
-
       - name: Ensure Working Directory Exists
         run: mkdir -p ./workspace
 
@@ -82,10 +77,8 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
 
-      - name: Debug Current Directory
-        run: |
-          echo "Current directory: $(pwd)"
-          ls -al
+      - name: Ensure Working Directory Exists
+        run: mkdir -p ./workspace
 
       - name: Set Permissions
         run: sudo chmod -R 755 ./workspace
@@ -256,10 +249,8 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
 
-      - name: Debug Current Directory
-        run: |
-          echo "Current directory: $(pwd)"
-          ls -al
+      - name: Ensure Working Directory Exists
+        run: mkdir -p ./workspace
 
       - name: Set Permissions
         run: sudo chmod -R 755 ./workspace
@@ -310,6 +301,9 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
 
+      - name: Ensure Working Directory Exists
+        run: mkdir -p ./workspace
+
       - name: Set Permissions
         run: sudo chmod -R 755 ./workspace
 
@@ -358,3 +352,4 @@ jobs:
           -v $(pwd):/workspace \
           -w /workspace \
           hashicorp/terraform:latest apply -input=false planfile
+
