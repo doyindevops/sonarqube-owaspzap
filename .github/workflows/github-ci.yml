@@ -30,7 +30,7 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Set Permissions
-        run: sudo chmod -R 777 $(pwd)
+        run: sudo chmod -R 755 ./
 
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -45,7 +45,7 @@ jobs:
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
           -e TF_VAR_github_repo="${{ secrets.GITHUB_REPO }}" \
-          -v $(pwd):/workspace \
+          -v ./workspace:/workspace \
           -w /workspace \
           hashicorp/terraform:latest init -upgrade
       - name: Upload Terraform Init Artifacts
@@ -69,7 +69,7 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Set Permissions
-        run: sudo chmod -R 777 $(pwd)
+        run: sudo chmod -R 755 ./
 
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -90,7 +90,7 @@ jobs:
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
           -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
-          -v $(pwd):/workspace \
+          -v ./workspace:/workspace \
           -w /workspace \
           hashicorp/terraform:latest validate
         continue-on-error: true
@@ -112,7 +112,7 @@ jobs:
           -u $(id -u):$(id -g) \
           -e SONAR_HOST_URL="${{ secrets.SONAR_HOST_URL }}" \
           -e SONAR_TOKEN="${{ secrets.SONAR_TOKEN }}" \
-          -v $(pwd):/workspace \
+          -v ./workspace:/workspace \
           -w /workspace \
           sonarsource/sonar-scanner-cli:latest \
           -Dsonar.projectKey=sonar_2024_devsecops \
@@ -135,7 +135,7 @@ jobs:
         run: |
           docker run --rm \
           -u $(id -u):$(id -g) \
-          -v $(pwd):/zap/wrk:rw \
+          -v ./workspace:/zap/wrk:rw \
           -t owasp/zap2docker-stable zap-baseline.py \
           -t http://your-web-application-url \
           -r zap_report.html
@@ -220,7 +220,7 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Set Permissions
-        run: sudo chmod -R 777 $(pwd)
+        run: sudo chmod -R 755 ./
 
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -232,7 +232,7 @@ jobs:
           download-timeout: 60
 
       - name: Set Executable Permissions
-        run: sudo chmod -R +x $(pwd)/.terraform
+        run: sudo chmod -R +x ./.terraform
 
       - name: Terraform Plan
         run: |
@@ -244,7 +244,7 @@ jobs:
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
           -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
-          -v $(pwd):/workspace \
+          -v ./workspace:/workspace \
           -w /workspace \
           hashicorp/terraform:latest plan -out planfile
       - name: Upload Planfile
@@ -266,7 +266,7 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Set Permissions
-        run: sudo chmod -R 777 $(pwd)
+        run: sudo chmod -R 755 ./
 
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -281,7 +281,7 @@ jobs:
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
           -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
-          -v $(pwd):/workspace \
+          -v ./workspace:/workspace \
           -w /workspace \
           hashicorp/terraform:latest init -upgrade
 
@@ -298,7 +298,7 @@ jobs:
           name: terraform-plan
 
       - name: Set Executable Permissions
-        run: sudo chmod -R +x $(pwd)/.terraform
+        run: sudo chmod -R +x ./.terraform
 
       - name: Terraform Apply
         run: |
@@ -310,6 +310,6 @@ jobs:
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
           -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
-          -v $(pwd):/workspace \
+          -v ./workspace:/workspace \
           -w /workspace \
           hashicorp/terraform:latest apply -input=false planfile
