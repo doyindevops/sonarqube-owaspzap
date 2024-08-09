@@ -24,6 +24,8 @@ This project was part of my **DevSecOps Journey** and demonstrates the integrati
 
    ![alt text](<images/SONARQUBE SERVER.jpg>) "SonarQube Analysis Results"
 
+   ![alt text](<images/A rating sonar.jpg>)  "SinarQube Analysis Result"
+
 ### 2. **Provisioning an S3 Bucket**
    - **Purpose:** An S3 bucket was provisioned to securely store Terraform state files.
    - **Reasoning:** Managing state files in S3 ensures consistency and provides a centralized location that can be accessed by multiple users or CI/CD pipelines.
