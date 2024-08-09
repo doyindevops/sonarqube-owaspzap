@@ -29,8 +29,16 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
 
+      - name: Debug Current Directory
+        run: |
+          echo "Current directory: $(pwd)"
+          ls -al
+
+      - name: Ensure Working Directory Exists
+        run: mkdir -p ./workspace
+
       - name: Set Permissions
-        run: sudo chmod -R 755 ./
+        run: sudo chmod -R 755 ./workspace
 
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -45,7 +53,7 @@ jobs:
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
           -e TF_VAR_github_repo="${{ secrets.GITHUB_REPO }}" \
-          -v ./workspace:/workspace \
+          -v $(pwd):/workspace \
           -w /workspace \
           hashicorp/terraform:latest init -upgrade
       - name: Upload Terraform Init Artifacts
@@ -68,8 +76,13 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
 
+      - name: Debug Current Directory
+        run: |
+          echo "Current directory: $(pwd)"
+          ls -al
+
       - name: Set Permissions
-        run: sudo chmod -R 755 ./
+        run: sudo chmod -R 755 ./workspace
 
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -90,7 +103,7 @@ jobs:
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
           -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
-          -v ./workspace:/workspace \
+          -v $(pwd):/workspace \
           -w /workspace \
           hashicorp/terraform:latest validate
         continue-on-error: true
@@ -112,7 +125,7 @@ jobs:
           -u $(id -u):$(id -g) \
           -e SONAR_HOST_URL="${{ secrets.SONAR_HOST_URL }}" \
           -e SONAR_TOKEN="${{ secrets.SONAR_TOKEN }}" \
-          -v ./workspace:/workspace \
+          -v $(pwd):/workspace \
           -w /workspace \
           sonarsource/sonar-scanner-cli:latest \
           -Dsonar.projectKey=sonar_2024_devsecops \
@@ -135,7 +148,7 @@ jobs:
         run: |
           docker run --rm \
           -u $(id -u):$(id -g) \
-          -v ./workspace:/zap/wrk:rw \
+          -v $(pwd):/zap/wrk:rw \
           -t owasp/zap2docker-stable zap-baseline.py \
           -t http://your-web-application-url \
           -r zap_report.html
@@ -219,8 +232,13 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
 
+      - name: Debug Current Directory
+        run: |
+          echo "Current directory: $(pwd)"
+          ls -al
+
       - name: Set Permissions
-        run: sudo chmod -R 755 ./
+        run: sudo chmod -R 755 ./workspace
 
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -244,7 +262,7 @@ jobs:
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
           -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
-          -v ./workspace:/workspace \
+          -v $(pwd):/workspace \
           -w /workspace \
           hashicorp/terraform:latest plan -out planfile
       - name: Upload Planfile
@@ -266,7 +284,7 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Set Permissions
-        run: sudo chmod -R 755 ./
+        run: sudo chmod -R 755 ./workspace
 
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -281,7 +299,7 @@ jobs:
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
           -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
-          -v ./workspace:/workspace \
+          -v $(pwd):/workspace \
           -w /workspace \
           hashicorp/terraform:latest init -upgrade
 
@@ -310,6 +328,6 @@ jobs:
           -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
           -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
           -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
-          -v ./workspace:/workspace \
+          -v $(pwd):/workspace \
           -w /workspace \
           hashicorp/terraform:latest apply -input=false planfile

@@ -1,6 +1,6 @@
 terraform {
   backend "s3"{
-    bucket = "infra-bucket-devsecops"
+    bucket = "infra-bucket-devsecop"
     key = "infra/state.tfstate"
     region = "eu-west-3"
     
