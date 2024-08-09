@@ -55,6 +55,7 @@ jobs:
           path: |
             .terraform/
             .terraform.lock.hcl
+
   validate:
     name: Terraform Validate
     runs-on: self-hosted
@@ -94,44 +95,55 @@ jobs:
           hashicorp/terraform:latest validate
         continue-on-error: true
 
-  tfsec:
-    name: tfsec Security Scan
+  sonar:
+    name: SonarQube Analysis
     runs-on: self-hosted
-    needs: init
-    services:
-      docker:
-        image: docker:19.03.12
-        options: --privileged
+    needs: validate
     steps:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
 
-      - name: Set Permissions
-        run: sudo chmod -R 777 $(pwd)
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: SonarQube Scan
+        run: |
+          docker run --rm \
+          -u $(id -u):$(id -g) \
+          -e SONAR_HOST_URL="${{ secrets.SONAR_HOST_URL }}" \
+          -e SONAR_TOKEN="${{ secrets.SONAR_TOKEN }}" \
+          -v $(pwd):/workspace \
+          -w /workspace \
+          sonarsource/sonar-scanner-cli:latest \
+          -Dsonar.projectKey=sonar_2024_devsecops \
+          -Dsonar.sources=./ \
+          -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+  zap:
+    name: OWASP ZAP Scan
+    runs-on: self-hosted
+    needs: validate
+    steps:
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v1
 
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: tfsec Scan
+      - name: OWASP ZAP Baseline Scan
         run: |
           docker run --rm \
           -u $(id -u):$(id -g) \
-          -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
-          -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-          -e AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" \
-          -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
-          -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
-          -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
-          -v $(pwd):/workspace \
-          -w /workspace \
-          aquasec/tfsec:latest . --format json --out tfsec.json
-        continue-on-error: true
-
-      - name: Upload tfsec Scan Results
+          -v $(pwd):/zap/wrk:rw \
+          -t owasp/zap2docker-stable zap-baseline.py \
+          -t http://your-web-application-url \
+          -r zap_report.html
+      - name: Upload OWASP ZAP Report
         uses: actions/upload-artifact@v2
         with:
-          name: tfsec-scan
-          path: tfsec.json
+          name: zap-report
+          path: zap_report.html
 
   gitleaks:
     name: Gitleaks Secret Scan
@@ -172,24 +184,6 @@ jobs:
         with:
           name: njsscan
           path: njsscan.sarif
-
-  semgrep:
-    name: Semgrep Security Scan
-    runs-on: self-hosted
-    needs: init
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-      - name: Semgrep Scan
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: p/javascript
-        continue-on-error: true
-      - name: Upload Semgrep Scan Results
-        uses: actions/upload-artifact@v2
-        with:
-          name: semgrep
-          path: semgrep.sarif
 
   retire:
     name: Retire.js Security Scan
@@ -267,63 +261,6 @@ jobs:
         image: docker:19.03.12
         options: --privileged
     needs: build
-    steps:
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v1
-
-      - name: Set Permissions
-        run: sudo chmod -R 777 $(pwd)
-
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Reinitialize Terraform
-        run: |
-          docker run --rm \
-          -u $(id -u):$(id -g) \
-          -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
-          -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-          -e AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" \
-          -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
-          -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
-          -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
-          -v $(pwd):/workspace \
-          -w /workspace \
-          hashicorp/terraform:latest init -upgrade
-
-      - name: Download Terraform Init Artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: terraform-init
-          path: .terraform
-          download-timeout: 60
-
-      - name: Download Planfile
-        uses: actions/download-artifact@v2
-        with:
-          name: terraform-plan
-
-      - name: Set Executable Permissions
-        run: sudo chmod -R +x $(pwd)/.terraform
-
-      - name: Terraform Apply
-        run: |
-          docker run --rm \
-          -u $(id -u):$(id -g) \
-          -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
-          -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-          -e AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" \
-          -e TF_VAR_env_prefix="${{ env.TF_VAR_env_prefix }}" \
-          -e TF_VAR_runner_registration_token="${{ secrets.RUNNER_TOKEN }}" \
-          -e TF_VAR_github_repo="${{ secrets.TF_VAR_github_repo }}" \
-          -v $(pwd):/workspace \
-          -w /workspace \
-          hashicorp/terraform:latest apply -input=false planfile
-
-  deploy_manual:
-    name: Terraform Apply Manual
-    runs-on: self-hosted
-    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
