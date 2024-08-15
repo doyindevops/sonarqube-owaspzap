@@ -1,7 +1,3 @@
-Here’s an enhanced version of your README with all the suggested markdown styling for better visual appeal:
-
----
-
 # CI/CD Pipeline with SonarQube and OWASP ZAP Integration
 
 ![alt text](<images/CI-CD START.jpg>) "CI/CD Pipeline Overview"
